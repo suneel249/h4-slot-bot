@@ -14,7 +14,8 @@ CHANNEL        = "us_visa_stamping_india"       # Public channel to monitor
 # ── CHANNELS TO MONITOR ─────────────────────────────────────────────────────
 CHANNELS = [
     "us_visa_stamping_india",       # Add as many public channels as you want
-    "h1b_slots"
+    "h1b_slots","h1bh4chennai",
+    "H1BVisaHelp","us_visa_stamping_india"
     # "another_channel_here",       # Uncomment and add more channels here
     # "yet_another_channel",
 ]
