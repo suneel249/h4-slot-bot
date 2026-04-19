@@ -91,7 +91,7 @@ async def startup_check():
 async def main():
     global client
     print("🤖 H4 Slot Alert Bot starting...")
-    client = TelegramClient("h4_monitor", API_ID, API_HASH)
+    client = TelegramClient("/app/session/h4_monitor", API_ID, API_HASH)
     client.add_event_handler(on_new_message, events.NewMessage(chats=CHANNELS))
     await client.start()
     print(f"✅ Bot connected! Monitoring {len(CHANNELS)} channel(s):")
