@@ -3,11 +3,11 @@ import re
 from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.tl.functions.messages import GetHistoryRequest
-
+import os
 # ── CONFIG ──────────────────────────────────────────────────────────────────
-BOT_TOKEN      = "8655632402:AAGKOJmBsS4JOKICMBdlD09FmvMICMMFzpA"          # Replace with your new token from @BotFather
-API_ID         = "31964194"             # Replace after Step 3 belown
-API_HASH       = "c1604faf6412fef686bb6590993c8ab1"           # Replace after Step 3 below
+BOT_TOKEN    = os.environ.get("BOT_TOKEN")
+API_ID       = os.environ.get("API_ID")
+API_HASH     = os.environ.get("API_HASH")   # Replace after Step 3 below
 YOUR_CHAT_ID   = 6350674200                     # Your Telegram ID (Suneel)
 CHANNEL        = "us_visa_stamping_india"       # Public channel to monitor
 
