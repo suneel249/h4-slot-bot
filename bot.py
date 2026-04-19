@@ -32,7 +32,8 @@ KEYWORDS = [
 ]
  
 # ── CLIENT SETUP ─────────────────────────────────────────────────────────────
-client = TelegramClient("h4_monitor", API_ID, API_HASH)
+# client is instantiated in main() after env vars are confirmed loaded
+client = None
  
 def is_relevant(text: str) -> bool:
     """Return True if the message contains H4/slot related keywords."""
@@ -57,7 +58,6 @@ async def send_alert(message_text: str, date: datetime, channel_name: str):
     )
     await client.send_message(YOUR_CHAT_ID, alert, parse_mode="markdown")
  
-@client.on(events.NewMessage(chats=CHANNELS))
 async def on_new_message(event):
     """Triggered on every new message in any of the monitored channels."""
     text = event.message.message
@@ -90,7 +90,10 @@ async def startup_check():
             print(f"   ❌ Error checking @{ch}: {e}")
  
 async def main():
+    global client
     print("🤖 H4 Slot Alert Bot starting...")
+    client = TelegramClient("h4_monitor", API_ID, API_HASH)
+    client.add_event_handler(on_new_message, events.NewMessage(chats=CHANNELS))
     await client.start(bot_token=BOT_TOKEN)
     print(f"✅ Bot connected! Monitoring {len(CHANNELS)} channel(s):")
     for ch in CHANNELS:
