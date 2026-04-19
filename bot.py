@@ -5,7 +5,6 @@ from telethon import TelegramClient, events
 from telethon.tl.functions.messages import GetHistoryRequest
 import os
 # ── CONFIG ──────────────────────────────────────────────────────────────────
-BOT_TOKEN    = os.environ.get("BOT_TOKEN")
 API_ID       = os.environ.get("API_ID")
 API_HASH     = os.environ.get("API_HASH")   # Replace after Step 3 below
 YOUR_CHAT_ID   = 6350674200                     # Your Telegram ID (Suneel)
@@ -94,7 +93,7 @@ async def main():
     print("🤖 H4 Slot Alert Bot starting...")
     client = TelegramClient("h4_monitor", API_ID, API_HASH)
     client.add_event_handler(on_new_message, events.NewMessage(chats=CHANNELS))
-    await client.start(bot_token=BOT_TOKEN)
+    await client.start()
     print(f"✅ Bot connected! Monitoring {len(CHANNELS)} channel(s):")
     for ch in CHANNELS:
         print(f"   → @{ch}")
