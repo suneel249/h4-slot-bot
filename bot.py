@@ -248,7 +248,7 @@ def main():
         async def _start_from_session():
             global client
             client = TelegramClient(SESSION_PATH, API_ID, API_HASH)
-            await client.start()   # no-op prompt; session is already valid
+            await client.connect()  # Just connect, don't prompt for auth
             await run_bot()
 
         # Run the bot on the loop in a background thread so Flask can still
