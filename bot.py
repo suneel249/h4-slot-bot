@@ -242,24 +242,71 @@ def main():
     # If a valid session already exists, skip the web auth and go straight
     # to monitoring.
     session_file = SESSION_PATH + ".session"
+
+    async def _start_from_session() -> bool:
+        """Try to start the client from an existing session file.
+
+        Returns True if the session is valid and the bot has been started,
+        False if the session is corrupted/unregistered (caller should fall
+        back to web auth).
+        """
+        global client
+
+        def _no_stdin_phone():
+            """Raise immediately so client.start() never blocks on stdin."""
+            raise RuntimeError("Session is invalid — phone input suppressed")
+
+        client = TelegramClient(SESSION_PATH, API_ID, API_HASH)
+        try:
+            # client.start() validates the session by checking the auth key
+            # with Telegram.  If the key is unregistered it raises before
+            # trying to call our phone callback; if it IS called it means
+            # the session file is simply missing/empty, so we raise ourselves.
+            await client.start(phone=_no_stdin_phone)
+        except Exception as e:
+            print(f"⚠️  Session validation failed ({e}) — deleting corrupted session.")
+            await client.disconnect()
+            try:
+                os.remove(session_file)
+            except OSError:
+                pass
+            return False
+
+        # Session is valid — launch the monitoring loop.
+        await run_bot()
+        return True  # never actually reached (run_bot blocks), but satisfies type
+
+    # Start the event loop on a background thread so both the session-
+    # validation coroutine and the Flask→asyncio bridge can use it.
+    t = threading.Thread(target=loop.run_forever, daemon=True)
+    t.start()
+
     if os.path.exists(session_file):
-        print("✅ Existing session found — skipping web auth.")
+        print("✅ Existing session found — validating...")
 
-        async def _start_from_session():
-            global client
-            client = TelegramClient(SESSION_PATH, API_ID, API_HASH)
-            await client.connect()  # Just connect, don't prompt for auth
-            await run_bot()
+        import concurrent.futures
 
-        # Run the bot on the loop in a background thread so Flask can still
-        # serve the status page on the main thread.
-        t = threading.Thread(target=loop.run_until_complete, args=(_start_from_session(),), daemon=True)
-        t.start()
+        # Schedule session validation on the now-running loop.
+        future = asyncio.run_coroutine_threadsafe(_start_from_session(), loop)
+
+        # Block briefly to detect an immediately-invalid session so we can
+        # show the web-auth form before Flask starts accepting requests.
+        session_valid = True
+        try:
+            # 15 s is enough for Telegram to reject a bad auth key; a good
+            # session will still be running run_bot() so we'll hit the timeout.
+            session_valid = future.result(timeout=15)
+        except concurrent.futures.TimeoutError:
+            # Still running — session is valid and the bot is starting up.
+            session_valid = True
+        except Exception as e:
+            print(f"⚠️  Unexpected error during session start: {e}")
+            session_valid = False
+
+        if not session_valid:
+            print("⚠️  Invalid session deleted — open the Railway URL to re-authenticate.")
     else:
         print("⚠️  No session found — open the Railway URL to authenticate.")
-        # Keep the loop alive in a background thread so Flask→asyncio calls work.
-        t = threading.Thread(target=loop.run_forever, daemon=True)
-        t.start()
 
     print(f"🌐 Web server listening on port {PORT}...")
     app.run(host="0.0.0.0", port=PORT, use_reloader=False)
