@@ -42,6 +42,7 @@ CHANNELS = [
 client: TelegramClient | None = None
 _phone_code_hash: str | None  = None   # returned by Telegram after sending OTP
 _phone_number: str | None     = None   # stored between the two POST steps
+_loop: asyncio.AbstractEventLoop | None = None
 
 # ── KEYWORD MATCHING ─────────────────────────────────────────────────────────
 def is_relevant(text: str) -> bool:
@@ -174,7 +175,8 @@ def auth_phone():
     if not phone:
         return redirect(url_for("index"))
 
-    loop = asyncio.get_event_loop()
+    loop = _loop
+
 
     async def _send_code():
         global client, _phone_code_hash
@@ -209,7 +211,8 @@ def auth_otp():
     if not otp or not _phone_number or not _phone_code_hash:
         return redirect(url_for("index"))
 
-    loop = asyncio.get_event_loop()
+    loop = _loop
+
 
     async def _sign_in():
         await client.sign_in(
@@ -236,8 +239,10 @@ def auth_otp():
 def main():
     # Create a single event loop that both asyncio tasks and Flask→asyncio
     # bridge calls will share.
+    global _loop
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    _loop = loop
 
     # If a valid session already exists, skip the web auth and go straight
     # to monitoring.
